@@ -1,0 +1,41 @@
+Metadata-Version: 1.1
+Name: cursive
+Version: 0.0.0
+Summary: Cursive implements OpenStack-specific validation of digital signatures.
+Home-page: http://www.openstack.org/
+Author: OpenStack
+Author-email: openstack-dev@lists.openstack.org
+License: UNKNOWN
+Description: ===============================
+        cursive
+        ===============================
+        
+        Cursive implements OpenStack-specific validation of digital signatures.
+        
+        Please fill here a long description which must be at least 3 lines wrapped on
+        80 cols, so that distribution package maintainers can use it in their packages.
+        Note that this is a hard requirement.
+        
+        * Free software: Apache license
+        * Documentation: http://docs.openstack.org/developer/cursive
+        * Source: http://git.openstack.org/cgit/openstack/cursive
+        * Bugs: http://bugs.launchpad.net/cursive
+        
+        Features
+        --------
+        
+        * TODO
+        
+        
+Platform: UNKNOWN
+Classifier: Environment :: OpenStack
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
