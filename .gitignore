@@ -1,0 +1,5 @@
+*.egg*
+*.pyc
+*.placeholder
+.tox
+.testrepository/
