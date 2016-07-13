@@ -1,5 +1,5 @@
 *.egg*
 *.pyc
-*.placeholder
 .tox
 .testrepository/
+releasenotes/build
