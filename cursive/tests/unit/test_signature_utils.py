@@ -38,6 +38,14 @@ TEST_ECC_PRIVATE_KEY = ec.generate_private_key(ec.SECP521R1(),
 TEST_DSA_PRIVATE_KEY = dsa.generate_private_key(key_size=3072,
                                                 backend=default_backend())
 
+# Required image property names
+(SIGNATURE, HASH_METHOD, KEY_TYPE, CERT_UUID) = (
+    signature_utils.SIGNATURE,
+    signature_utils.HASH_METHOD,
+    signature_utils.KEY_TYPE,
+    signature_utils.CERT_UUID
+)
+
 
 class FakeKeyManager(object):
 
@@ -101,6 +109,31 @@ class BadPublicKey(object):
 
 class TestSignatureUtils(base.TestCase):
     """Test methods of signature_utils"""
+
+    def test_should_create_verifier(self):
+        image_props = {CERT_UUID: 'CERT_UUID',
+                       HASH_METHOD: 'HASH_METHOD',
+                       SIGNATURE: 'SIGNATURE',
+                       KEY_TYPE: 'SIG_KEY_TYPE'}
+        self.assertTrue(signature_utils.should_create_verifier(image_props))
+
+    def test_should_create_verifier_fail(self):
+        bad_image_properties = [{CERT_UUID: 'CERT_UUID',
+                                 HASH_METHOD: 'HASH_METHOD',
+                                 SIGNATURE: 'SIGNATURE'},
+                                {CERT_UUID: 'CERT_UUID',
+                                 HASH_METHOD: 'HASH_METHOD',
+                                 KEY_TYPE: 'SIG_KEY_TYPE'},
+                                {CERT_UUID: 'CERT_UUID',
+                                 SIGNATURE: 'SIGNATURE',
+                                 KEY_TYPE: 'SIG_KEY_TYPE'},
+                                {HASH_METHOD: 'HASH_METHOD',
+                                 SIGNATURE: 'SIGNATURE',
+                                 KEY_TYPE: 'SIG_KEY_TYPE'}]
+
+        for bad_props in bad_image_properties:
+            result = signature_utils.should_create_verifier(bad_props)
+            self.assertFalse(result)
 
     @mock.patch('cursive.signature_utils.get_public_key')
     def test_verify_signature_PSS(self, mock_get_pub_key):

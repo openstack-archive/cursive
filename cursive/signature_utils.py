@@ -70,6 +70,14 @@ MASK_GEN_ALGORITHMS = {
     'MGF1': padding.MGF1,
 }
 
+# Required image property names
+(SIGNATURE, HASH_METHOD, KEY_TYPE, CERT_UUID) = (
+    'img_signature',
+    'img_signature_hash_method',
+    'img_signature_key_type',
+    'img_signature_certificate_uuid'
+)
+
 
 class SignatureKeyType(object):
 
@@ -170,6 +178,22 @@ for curve in ECC_CURVES:
         SignatureKeyType.register('ECC_' + curve.name.upper(),
                                   ec.EllipticCurvePublicKey,
                                   create_verifier_for_ecc)
+
+
+def should_create_verifier(image_properties):
+    """Determine whether a verifier should be created.
+
+    Using the image properties, determine whether existing properties indicate
+    that signature verification should be done.
+
+    :param image_properties: the key-value properties about the image
+    :return: True, if signature metadata properties exist, False otherwise
+    """
+    return (image_properties is not None and
+            CERT_UUID in image_properties and
+            HASH_METHOD in image_properties and
+            SIGNATURE in image_properties and
+            KEY_TYPE in image_properties)
 
 
 def get_verifier(context, img_signature_certificate_uuid,
