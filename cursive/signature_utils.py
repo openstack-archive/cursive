@@ -26,8 +26,8 @@ from cryptography import x509
 from oslo_log import log as logging
 from oslo_serialization import base64
 from oslo_utils import encodeutils
-from oslo_utils import timeutils
 
+from cursive import certificate_utils
 from cursive import exception
 from cursive.i18n import _, _LE
 
@@ -69,6 +69,7 @@ CERTIFICATE_FORMATS = {
 MASK_GEN_ALGORITHMS = {
     'MGF1': padding.MGF1,
 }
+
 
 # Required image property names
 (SIGNATURE, HASH_METHOD, KEY_TYPE, CERT_UUID) = (
@@ -198,7 +199,7 @@ def should_create_verifier(image_properties):
 
 def get_verifier(context, img_signature_certificate_uuid,
                  img_signature_hash_method, img_signature,
-                 img_signature_key_type):
+                 img_signature_key_type, trust_store_path=None):
     """Instantiate signature properties and use them to create a verifier.
 
     :param context: the user context for authentication
@@ -209,6 +210,9 @@ def get_verifier(context, img_signature_certificate_uuid,
     :param img_signature: string of base64 encoding of signature
     :param img_signature_key_type:
            string denoting type of keypair used to compute signature
+    :param trust_store_path:
+           string containing valid filesystem path to the directory acting
+           as the certificate trust store (e.g., /etc/ssl/certs)
     :returns: instance of
        cryptography.hazmat.primitives.asymmetric.AsymmetricVerificationContext
     :raises: SignatureVerificationError if we fail to build the verifier
@@ -229,7 +233,8 @@ def get_verifier(context, img_signature_certificate_uuid,
     signature_key_type = SignatureKeyType.lookup(img_signature_key_type)
     public_key = get_public_key(context,
                                 img_signature_certificate_uuid,
-                                signature_key_type)
+                                signature_key_type,
+                                trust_store_path)
 
     # create the verifier based on the signature key type
     verifier = signature_key_type.create_verifier(signature,
@@ -274,17 +279,22 @@ def get_hash_method(hash_method_name):
     return HASH_METHODS[hash_method_name]
 
 
-def get_public_key(context, signature_certificate_uuid, signature_key_type):
+def get_public_key(context, signature_certificate_uuid, signature_key_type,
+                   trust_store_path=None):
     """Create the public key object from a retrieved certificate.
 
     :param context: the user context for authentication
     :param signature_certificate_uuid: the uuid to use to retrieve the
                                        certificate
     :param signature_key_type: a SignatureKeyType object
+    :param trust_store_path:
+           string containing valid filesystem path to the directory acting
+           as the certificate trust store (e.g., /etc/ssl/certs)
     :returns: the public key cryptography object
     :raises: SignatureVerificationError if public key format is invalid
     """
     certificate = get_certificate(context, signature_certificate_uuid)
+    certificate_utils.verify_certificate(certificate, trust_store_path)
 
     # Note that this public key could either be
     # RSAPublicKey, DSAPublicKey, or EllipticCurvePublicKey
@@ -336,28 +346,4 @@ def get_certificate(context, signature_certificate_uuid):
         certificate = x509.load_der_x509_certificate(cert_data,
                                                      default_backend())
 
-    # verify the certificate
-    verify_certificate(certificate)
-
     return certificate
-
-
-def verify_certificate(certificate):
-    """Verify that the certificate has not expired.
-
-    :param certificate: the cryptography certificate object
-    :raises: SignatureVerificationError if the certificate valid time range
-             does not include now
-    """
-    # Get now in UTC, since certificate returns times in UTC
-    now = timeutils.utcnow()
-
-    # Confirm the certificate valid time range includes now
-    if now < certificate.not_valid_before:
-        raise exception.SignatureVerificationError(
-            reason=_('Certificate is not valid before: %s UTC')
-            % certificate.not_valid_before)
-    elif now > certificate.not_valid_after:
-        raise exception.SignatureVerificationError(
-            reason=_('Certificate is not valid after: %s UTC')
-            % certificate.not_valid_after)
