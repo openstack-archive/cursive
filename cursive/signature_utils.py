@@ -26,7 +26,6 @@ from cryptography import x509
 from oslo_log import log as logging
 from oslo_serialization import base64
 from oslo_utils import encodeutils
-from oslo_utils import timeutils
 
 from cursive import exception
 from cursive.i18n import _, _LE
@@ -69,6 +68,7 @@ CERTIFICATE_FORMATS = {
 MASK_GEN_ALGORITHMS = {
     'MGF1': padding.MGF1,
 }
+
 
 # Required image property names
 (SIGNATURE, HASH_METHOD, KEY_TYPE, CERT_UUID) = (
@@ -336,28 +336,4 @@ def get_certificate(context, signature_certificate_uuid):
         certificate = x509.load_der_x509_certificate(cert_data,
                                                      default_backend())
 
-    # verify the certificate
-    verify_certificate(certificate)
-
     return certificate
-
-
-def verify_certificate(certificate):
-    """Verify that the certificate has not expired.
-
-    :param certificate: the cryptography certificate object
-    :raises: SignatureVerificationError if the certificate valid time range
-             does not include now
-    """
-    # Get now in UTC, since certificate returns times in UTC
-    now = timeutils.utcnow()
-
-    # Confirm the certificate valid time range includes now
-    if now < certificate.not_valid_before:
-        raise exception.SignatureVerificationError(
-            reason=_('Certificate is not valid before: %s UTC')
-            % certificate.not_valid_before)
-    elif now > certificate.not_valid_after:
-        raise exception.SignatureVerificationError(
-            reason=_('Certificate is not valid after: %s UTC')
-            % certificate.not_valid_after)
