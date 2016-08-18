@@ -1,0 +1,34 @@
+---
+prelude: >
+    The cursive library supports the verification of digital signatures.
+    However, there is no way currently to validate the certificate used to
+    generate a given signature. Adding certificate validation improves the
+    security of signature verification.
+features:
+  - Adds a variety of certificate utility functions that inspect certificate
+    attributes and extensions for different settings.
+  - Adds support for loading certificates from a certificate trust store, a
+    designated filesystem directory containing trusted root or intermediate
+    certificates.
+  - Adds the CertificateVerificationContext class which uses the trust store
+    to conduct certificate validation, verifying that a given certificate is
+    part of a certificate chain rooted in the trust store.
+  - Updates the signature verification workflow to include certificate
+    validation. This includes updating the signature verification API to
+    accept an extra argument containing the filesystem path to the trust
+    store directory.
+upgrade:
+  - The addition of certificate validation in the signature verification
+    process breaks backwards compatibility. Signatures previously verifiable
+    with cursive will not be verifiable unless their signing certificates
+    or their root certificates are included in the certificate trust store.
+security:
+  - The addition of certificate validation in the signature verification
+    process improves the security of signature verification. A signature is
+    now no longer valid unless its corresponding certificate is also
+    trusted.
+  - The addition of support for a certificate trust store necessitates the
+    protection of the trust store from unauthorized access. An adversary
+    with trust store access could add or remove certificates from the trust
+    store, allowing their signatures to be verified or preventing valid
+    user signatures from being verified.
