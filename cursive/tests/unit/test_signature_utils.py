@@ -12,6 +12,7 @@
 
 import base64
 import datetime
+import mock
 
 from castellan.common.exception import KeyManagerError
 import cryptography.exceptions as crypto_exceptions
@@ -20,7 +21,6 @@ from cryptography.hazmat.primitives.asymmetric import dsa
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric import rsa
-import mock
 from oslo_utils import timeutils
 
 from cursive import exception
@@ -109,6 +109,12 @@ class BadPublicKey(object):
 
 class TestSignatureUtils(base.TestCase):
     """Test methods of signature_utils"""
+
+    def setUp(self):
+        super(TestSignatureUtils, self).setUp()
+
+    def tearDown(self):
+        super(TestSignatureUtils, self).tearDown()
 
     def test_should_create_verifier(self):
         image_props = {CERT_UUID: 'CERT_UUID',
@@ -283,7 +289,8 @@ class TestSignatureUtils(base.TestCase):
                                'RSB-PSS')
 
     @mock.patch('cursive.signature_utils.get_certificate')
-    def test_get_public_key_rsa(self, mock_get_cert):
+    @mock.patch('cursive.certificate_utils.verify_certificate')
+    def test_get_public_key_rsa(self, mock_verify_cert, mock_get_cert):
         fake_cert = FakeCryptoCertificate()
         mock_get_cert.return_value = fake_cert
         sig_key_type = signature_utils.SignatureKeyType.lookup(
@@ -294,7 +301,8 @@ class TestSignatureUtils(base.TestCase):
         self.assertEqual(fake_cert.public_key(), result_pub_key)
 
     @mock.patch('cursive.signature_utils.get_certificate')
-    def test_get_public_key_ecc(self, mock_get_cert):
+    @mock.patch('cursive.certificate_utils.verify_certificate')
+    def test_get_public_key_ecc(self, mock_verify_cert, mock_get_cert):
         fake_cert = FakeCryptoCertificate(TEST_ECC_PRIVATE_KEY.public_key())
         mock_get_cert.return_value = fake_cert
         sig_key_type = signature_utils.SignatureKeyType.lookup('ECC_SECP521R1')
@@ -303,7 +311,8 @@ class TestSignatureUtils(base.TestCase):
         self.assertEqual(fake_cert.public_key(), result_pub_key)
 
     @mock.patch('cursive.signature_utils.get_certificate')
-    def test_get_public_key_dsa(self, mock_get_cert):
+    @mock.patch('cursive.certificate_utils.verify_certificate')
+    def test_get_public_key_dsa(self, mock_verify_cert, mock_get_cert):
         fake_cert = FakeCryptoCertificate(TEST_DSA_PRIVATE_KEY.public_key())
         mock_get_cert.return_value = fake_cert
         sig_key_type = signature_utils.SignatureKeyType.lookup(
@@ -314,7 +323,9 @@ class TestSignatureUtils(base.TestCase):
         self.assertEqual(fake_cert.public_key(), result_pub_key)
 
     @mock.patch('cursive.signature_utils.get_certificate')
-    def test_get_public_key_invalid_key(self, mock_get_certificate):
+    @mock.patch('cursive.certificate_utils.verify_certificate')
+    def test_get_public_key_invalid_key(self, mock_verify_certificate,
+                                        mock_get_certificate):
         bad_pub_key = 'A' * 256
         mock_get_certificate.return_value = FakeCryptoCertificate(bad_pub_key)
         sig_key_type = signature_utils.SignatureKeyType.lookup(
@@ -334,34 +345,6 @@ class TestSignatureUtils(base.TestCase):
         mock_load_cert.return_value = x509_cert
         self.assertEqual(x509_cert,
                          signature_utils.get_certificate(None, cert_uuid))
-
-    @mock.patch('cryptography.x509.load_der_x509_certificate')
-    @mock.patch('castellan.key_manager.API', return_value=FakeKeyManager())
-    def test_get_expired_certificate(self, mock_key_manager_API,
-                                     mock_load_cert):
-        cert_uuid = 'valid_format_cert'
-        x509_cert = FakeCryptoCertificate(
-            not_valid_after=timeutils.utcnow() -
-            datetime.timedelta(hours=1))
-        mock_load_cert.return_value = x509_cert
-        self.assertRaisesRegex(exception.SignatureVerificationError,
-                               'Certificate is not valid after: .*',
-                               signature_utils.get_certificate, None,
-                               cert_uuid)
-
-    @mock.patch('cryptography.x509.load_der_x509_certificate')
-    @mock.patch('castellan.key_manager.API', return_value=FakeKeyManager())
-    def test_get_not_yet_valid_certificate(self, mock_key_manager_API,
-                                           mock_load_cert):
-        cert_uuid = 'valid_format_cert'
-        x509_cert = FakeCryptoCertificate(
-            not_valid_before=timeutils.utcnow() +
-            datetime.timedelta(hours=1))
-        mock_load_cert.return_value = x509_cert
-        self.assertRaisesRegex(exception.SignatureVerificationError,
-                               'Certificate is not valid before: .*',
-                               signature_utils.get_certificate, None,
-                               cert_uuid)
 
     @mock.patch('castellan.key_manager.API', return_value=FakeKeyManager())
     def test_get_certificate_key_manager_fail(self, mock_key_manager_API):
