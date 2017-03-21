@@ -81,7 +81,7 @@ MASK_GEN_ALGORITHMS = {
 
 class SignatureKeyType(object):
 
-    _REGISTERED_TYPES = {}
+    REGISTERED_TYPES = {}
 
     def __init__(self, name, public_key_type, create_verifier):
         self.name = name
@@ -96,9 +96,9 @@ class SignatureKeyType(object):
         :param public_key_type: e.g. RSAPublicKey, DSAPublicKey, etc.
         :param create_verifier: a function to create a verifier for this type
         """
-        cls._REGISTERED_TYPES[name] = cls(name,
-                                          public_key_type,
-                                          create_verifier)
+        cls.REGISTERED_TYPES[name] = cls(name,
+                                         public_key_type,
+                                         create_verifier)
 
     @classmethod
     def lookup(cls, name):
@@ -108,10 +108,10 @@ class SignatureKeyType(object):
         :returns: the SignatureKeyType object
         :raises: SignatureVerificationError if signature key type is invalid
         """
-        if name not in cls._REGISTERED_TYPES:
+        if name not in cls.REGISTERED_TYPES:
             raise exception.SignatureVerificationError(
                 reason=_('Invalid signature key type: %s') % name)
-        return cls._REGISTERED_TYPES[name]
+        return cls.REGISTERED_TYPES[name]
 
 
 # each key type will require its own verifier
