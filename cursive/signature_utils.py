@@ -29,7 +29,7 @@ from oslo_utils import encodeutils
 from oslo_utils import timeutils
 
 from cursive import exception
-from cursive.i18n import _, _LE
+from cursive.i18n import _
 
 LOG = logging.getLogger(__name__)
 
@@ -318,7 +318,7 @@ def get_certificate(context, signature_certificate_uuid):
         # The problem encountered may be backend-specific, since castellan
         # can use different backends.  Rather than importing all possible
         # backends here, the generic "Exception" is used.
-        msg = (_LE("Unable to retrieve certificate with ID %(id)s: %(e)s")
+        msg = (_("Unable to retrieve certificate with ID %(id)s: %(e)s")
                % {'id': signature_certificate_uuid,
                   'e': encodeutils.exception_to_unicode(e)})
         LOG.error(msg)
