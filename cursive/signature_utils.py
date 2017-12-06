@@ -15,6 +15,7 @@
 import binascii
 
 from castellan.common.exception import KeyManagerError
+from castellan.common.exception import ManagedObjectNotFoundError
 from castellan import key_manager
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import dsa
@@ -314,6 +315,10 @@ def get_certificate(context, signature_certificate_uuid):
     try:
         # The certificate retrieved here is a castellan certificate object
         cert = keymgr_api.get(context, signature_certificate_uuid)
+    except ManagedObjectNotFoundError as e:
+        raise exception.SignatureVerificationError(
+            reason=_('Certificate not found with ID: %s')
+            % signature_certificate_uuid)
     except KeyManagerError as e:
         # The problem encountered may be backend-specific, since castellan
         # can use different backends.  Rather than importing all possible

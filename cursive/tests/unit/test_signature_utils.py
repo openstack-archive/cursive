@@ -15,6 +15,7 @@ import datetime
 import mock
 
 from castellan.common.exception import KeyManagerError
+from castellan.common.exception import ManagedObjectNotFoundError
 import cryptography.exceptions as crypto_exceptions
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import dsa
@@ -53,13 +54,17 @@ class FakeKeyManager(object):
         self.certs = {'invalid_format_cert':
                       FakeCastellanCertificate('A' * 256, 'BLAH'),
                       'valid_format_cert':
-                      FakeCastellanCertificate('A' * 256, 'X.509')}
+                      FakeCastellanCertificate('A' * 256, 'X.509'),
+                      'invalid-cert-uuid': ManagedObjectNotFoundError()
+                      }
 
     def get(self, context, cert_uuid):
         cert = self.certs.get(cert_uuid)
 
         if cert is None:
             raise KeyManagerError("No matching certificate found.")
+        if isinstance(cert, ManagedObjectNotFoundError):
+            raise cert
 
         return cert
 
@@ -361,3 +366,11 @@ class TestSignatureUtils(base.TestCase):
                                'Invalid certificate format: .*',
                                signature_utils.get_certificate, None,
                                cert_uuid)
+
+    @mock.patch('castellan.key_manager.API', return_value=FakeKeyManager())
+    def test_get_certificate_id_not_exist(self, mock_key_manager):
+        bad_cert_uuid = 'invalid-cert-uuid'
+        self.assertRaisesRegex(exception.SignatureVerificationError,
+                               'Certificate not found with ID: .*',
+                               signature_utils.get_certificate, None,
+                               bad_cert_uuid)
