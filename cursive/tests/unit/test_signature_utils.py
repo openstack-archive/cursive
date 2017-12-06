@@ -15,6 +15,7 @@ import datetime
 import mock
 
 from castellan.common.exception import KeyManagerError
+from castellan.common.exception import ManagedObjectNotFoundError
 import cryptography.exceptions as crypto_exceptions
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import dsa
@@ -361,3 +362,13 @@ class TestSignatureUtils(base.TestCase):
                                'Invalid certificate format: .*',
                                signature_utils.get_certificate, None,
                                cert_uuid)
+
+    @mock.patch(
+        'castellan.key_manager.barbican_key_manager.BarbicanKeyManager.get')
+    def test_get_certificate_id_not_exist(self, mock_key_manager):
+        mock_key_manager.side_effect = ManagedObjectNotFoundError()
+        bad_cert_uuid = 'invalid-cert-uuid'
+        self.assertRaisesRegex(exception.SignatureVerificationError,
+                               'Certificate not found with ID: .*',
+                               signature_utils.get_certificate, None,
+                               bad_cert_uuid)
