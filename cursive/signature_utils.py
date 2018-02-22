@@ -30,6 +30,7 @@ from oslo_utils import encodeutils
 
 from cursive import exception
 from cursive.i18n import _, _LE
+from cursive import verifiers
 
 LOG = logging.getLogger(__name__)
 
@@ -126,6 +127,10 @@ def create_verifier_for_pss(signature, hash_method, public_key):
                                         are invalid
     :returns: the verifier to use to verify the signature for RSA-PSS
     """
+    # confirm none of the inputs are None
+    if not signature or not hash_method or not public_key:
+        return None
+
     # default to MGF1
     mgf = padding.MGF1(hash_method)
 
@@ -133,10 +138,14 @@ def create_verifier_for_pss(signature, hash_method, public_key):
     salt_length = padding.PSS.MAX_LENGTH
 
     # return the verifier
-    return public_key.verifier(
+    return verifiers.RSAVerifier(
         signature,
-        padding.PSS(mgf=mgf, salt_length=salt_length),
-        hash_method
+        hash_method,
+        public_key,
+        padding.PSS(
+            mgf=mgf,
+            salt_length=salt_length
+        )
     )
 
 
@@ -148,10 +157,15 @@ def create_verifier_for_ecc(signature, hash_method, public_key):
     :param public_key: the public key to use, as a cryptography object
     :returns: the verifier to use to verify the signature for ECC_*.
     """
+    # confirm none of the inputs are None
+    if not signature or not hash_method or not public_key:
+        return None
+
     # return the verifier
-    return public_key.verifier(
+    return verifiers.ECCVerifier(
         signature,
-        ec.ECDSA(hash_method)
+        hash_method,
+        public_key,
     )
 
 
@@ -163,10 +177,15 @@ def create_verifier_for_dsa(signature, hash_method, public_key):
     :param public_key: the public key to use, as a cryptography object
     :returns: the verifier to use to verify the signature for DSA
     """
+    # confirm none of the inputs are None
+    if not signature or not hash_method or not public_key:
+        return None
+
     # return the verifier
-    return public_key.verifier(
+    return verifiers.DSAVerifier(
         signature,
-        hash_method
+        hash_method,
+        public_key,
     )
 
 

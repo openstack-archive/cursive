@@ -106,12 +106,6 @@ class FakeCryptoCertificate(object):
         return self.cert_not_valid_after
 
 
-class BadPublicKey(object):
-
-    def verifier(self, signature, padding, hash_method):
-        return None
-
-
 class TestSignatureUtils(base.TestCase):
     """Test methods of signature_utils"""
 
@@ -248,7 +242,7 @@ class TestSignatureUtils(base.TestCase):
 
     @mock.patch('cursive.signature_utils.get_public_key')
     def test_get_verifier_none(self, mock_get_pub_key):
-        mock_get_pub_key.return_value = BadPublicKey()
+        mock_get_pub_key.return_value = None
         img_sig_cert_uuid = 'fea14bc2-d75f-4ba5-bccc-b5c924ad0693'
         self.assertRaisesRegex(exception.SignatureVerificationError,
                                'Error occurred while creating'
