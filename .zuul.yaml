@@ -1,0 +1,5 @@
+- project:
+    check:
+      jobs:
+        - barbican-simple-crypto-devstack-tempest-cursive:
+            voting: false
