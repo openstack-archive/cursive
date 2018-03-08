@@ -1,0 +1,6 @@
+- project:
+    name: openstack/cursive
+    check:
+      jobs:
+        - barbican-simple-crypto-devstack-tempest-cursive:
+            voting: false
