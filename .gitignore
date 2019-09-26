@@ -1,5 +1,0 @@
-*.egg*
-*.pyc
-.tox
-.testrepository/
-releasenotes/build
